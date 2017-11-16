@@ -14,13 +14,9 @@
 
 [`npm install objection-before-and-unique`](https://www.npmjs.com/package/objection-before-and-unique)
 
-## Todo
-
-- [] Precedence: 'before', 'unique', 'none'
-
 ## Usage
 
-Because of the way `Objection.js` works, [as it doesn't recover and pass the previous instance implicitly when doing patches or updates through `Model.query()` to `$beforeUpdate`](http://vincit.github.io/objection.js/#_s_beforeupdate), any [Model.query()](http://vincit.github.io/objection.js/#query) update/patch method will fail. In order to update/patch in Models using this plugin, you must recover the instance first, and do [`instance.$query()`](http://vincit.github.io/objection.js/#_s_query).
+Because of the way `Objection.js` works, [as it doesn't recover and pass the previous instance implicitly when doing patches or updates through `Model.query()` to `$beforeUpdate`](http://vincit.github.io/objection.js/#_s_beforeupdate), any [Model.query()](http://vincit.github.io/objection.js/#query) update/patch method will fail. In order to update/patch using this plugin, you must recover the instance first, and then do [`instance.$query()`](http://vincit.github.io/objection.js/#_s_query).
 
 To use, mixin the model:
 
@@ -36,7 +32,7 @@ Where `opts` is an object with the options taken by `objection-before-and-unique
 
 ### `unique`
 
-Optional key. Sets the unique columns.
+*Optional.* Sets the unique columns.
 
 Takes an **array of objects**, each with keys:
 
@@ -58,7 +54,7 @@ If any of the unique checks fails, a [`ValidationError`](http://vincit.github.io
 
 ### `before`
 
-Optional key. Defines functions to run before inserting/patching/updating a database entry, to do any additional checks/validations or mutate the object.
+*Optional.* Defines functions to run before inserting/patching/updating a database entry, to do any additional checks/validations or mutate the object.
 
 Takes an **array of functions**, each:
 
@@ -96,6 +92,18 @@ opts.before = [
 ];
 ```
 
+### `precedence`
+
+*Optional,* **string.** Defines the order in which the checks should run. Valid values are:
+
+- `'none'`: *Default.* Checks are run in parallel so their completion can happen in no specific order.
+- `'before'`: Checks are run sequentially (next check only begins when the previous has ended) in the order they where passed. `before` checks are run first, then `unique`.
+- `'unique'`: Checks are run sequentially (next check only begins when the previous has ended) in the order they where passed. `unique` checks are run first, then `before`.
+
+```javascript
+opts.precendence = 'unique';
+```
+
 ### Example
 
 ```javascript
@@ -105,6 +113,7 @@ const beforeUnique = require('objection-before-and-unique');
 // Once you mixin the Model like so, you'll be able to define
 // `uniqueConstraints` and `beforeChecks` in your model
 class MyModel extends beforeUnique({
+    precedence: 'none',
     unique: [
         { col: 'username', label: 'User' },
         { col: 'email', label: 'Email', insensitive: true },
