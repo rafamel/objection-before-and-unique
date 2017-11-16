@@ -30,7 +30,7 @@ module.exports = {
         "max-len": [2, {
             "code": 90,
             "ignoreUrls": true,
-            "ignoreComments": false,
+            "ignoreComments": true,
             "ignoreStrings": true,
             "ignoreTemplateLiterals": true,
             "ignoreRegExpLiterals": true

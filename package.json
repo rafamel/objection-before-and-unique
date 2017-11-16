@@ -1,6 +1,6 @@
 {
   "name": "objection-before-and-unique",
-  "version": "0.3.0",
+  "version": "0.1.0",
   "author": "Rafa Mel",
   "description": "Advanced unique validation + Simpler before API/checks for Objection.js",
   "homepage": "https://github.com/rafamel/objection-before-and-unique",
@@ -9,9 +9,10 @@
     "lint": "eslint ./lib --ext .js",
     "lint:test": "eslint ./test --ext .js",
     "lint:md": "markdownlint *.md --config markdown.json",
-    "test": "npm run lint:test && jest ./test/.*.test.js --runInBand --verbose",
+    "beforeJest": "knex migrate:latest --knexfile=\"test/utils/db/knexfile.js\"",
+    "test": "run-s lint:test beforeJest && jest ./test/.*.test.js --runInBand --verbose",
     "watch": "nodemon ./node_modules/.bin/run-s lint test",
-    "checks": "run-s lint lint:* && jest ./test/.*.test.js && npm outdated",
+    "checks": "run-s lint lint:* beforeJest && jest ./test/.*.test.js && npm outdated",
     "prepublishOnly": "npm run checks",
     "update:packages": "rm -rf node_modules && rm package-lock.json && npm update --save/save-dev && npm install && npm outdated"
   },
@@ -52,17 +53,23 @@
     "eslint-plugin-promise": "^3.6.0",
     "eslint-plugin-standard": "^3.0.1",
     "jest-cli": "^21.2.1",
+    "knex": "^0.14.0",
     "markdownlint-cli": "^0.5.0",
     "nodemon": "^1.12.1",
     "npm-run-all": "^4.1.1",
-    "pre-commit": "^1.2.2"
+    "objection": "^0.9.0",
+    "pre-commit": "^1.2.2",
+    "sqlite3": "^3.1.13"
   },
-  "dependencies": {},
+  "dependencies": {
+    "joi": "^13.0.2"
+  },
   "engines": {
     "node": ">=8.0.0"
   },
   "jest": {
     "testEnvironment": "node",
-    "collectCoverage": true
+    "collectCoverage": true,
+    "setupTestFrameworkScriptFile": "./test/utils/db/connection.js"
   }
 }
