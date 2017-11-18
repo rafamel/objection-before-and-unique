@@ -9,7 +9,7 @@
     "lint": "eslint ./lib --ext .js",
     "lint:test": "eslint ./test --ext .js",
     "lint:md": "markdownlint *.md --config markdown.json",
-    "beforeJest": "knex migrate:latest --knexfile=\"test/utils/db/knexfile.js\"",
+    "beforeJest": "knex migrate:latest --knexfile=\"test/db/knexfile.js\"",
     "test": "run-s lint:test beforeJest && jest ./test/.*.test.js --runInBand --verbose",
     "watch": "nodemon ./node_modules/.bin/run-s lint test",
     "checks": "run-s lint lint:* beforeJest && jest ./test/.*.test.js && npm outdated",
@@ -66,6 +66,6 @@
   "jest": {
     "testEnvironment": "node",
     "collectCoverage": true,
-    "setupTestFrameworkScriptFile": "./test/utils/db/connection.js"
+    "setupTestFrameworkScriptFile": "./test/utils/db_connection.js"
   }
 }

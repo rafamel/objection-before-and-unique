@@ -297,7 +297,7 @@ describe(`- Unique`, () => {
                 await clearAndInsert();
                 const User = userFactory({
                     before: [
-                        (newer, older) => {
+                        (newer) => {
                             newer.username += 'hello';
                         }
                     ]
@@ -332,7 +332,7 @@ describe(`- Unique`, () => {
             test(id(1) + `Sync`, async () => {
                 const User = userFactory({
                     before: [
-                        (newer, older) => {
+                        () => {
                             throw Error('Some Error');
                         }
                     ]
@@ -345,7 +345,7 @@ describe(`- Unique`, () => {
             test(id(2) + `Async`, async () => {
                 const User = userFactory({
                     before: [
-                        async (newer, older) => {
+                        async () => {
                             throw Error('Some Error');
                         }
                     ]
@@ -354,6 +354,24 @@ describe(`- Unique`, () => {
                     .insert({ username: 'hola' });
                 await expect(promise).rejects
                     .toBeInstanceOf(Error);
+            });
+        });
+
+        describe(`- Receives query context`, () => {
+            test(id(1), async () => {
+                await clearAndInsert();
+                const User = userFactory({
+                    before: [
+                        (newer, _, ctx) => {
+                            newer.username = ctx.name;
+                        }
+                    ]
+                });
+                const promise = User.query()
+                    .context({ name: 'Hi' })
+                    .insert({});
+                await expect(promise).resolves
+                    .toHaveProperty('username', 'Hi');
             });
         });
     });
@@ -366,7 +384,7 @@ describe(`- Precedence`, () => {
             precedence: 'before',
             unique: [{ col: 'username' }],
             before: [
-                async (newer, older) => {
+                async (newer) => {
                     newer.username += 'hello';
                 }
             ]

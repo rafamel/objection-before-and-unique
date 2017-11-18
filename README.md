@@ -16,7 +16,7 @@
 
 ## Usage
 
-Because of the way `Objection.js` works, [as it doesn't recover and pass the previous instance implicitly when doing patches or updates through `Model.query()` to `$beforeUpdate`](http://vincit.github.io/objection.js/#_s_beforeupdate), any [Model.query()](http://vincit.github.io/objection.js/#query) update/patch method will fail. In order to update/patch using this plugin, you must recover the instance first, and then do [`instance.$query()`](http://vincit.github.io/objection.js/#_s_query).
+Because of the way `Objection.js` works, [as it doesn't recover and pass the previous instance implicitly when doing patches or updates through `Model.query()` to `$beforeUpdate`](http://vincit.github.io/objection.js/#_s_beforeupdate), any [Model.query()](http://vincit.github.io/objection.js/#query) update/patch method will fail. In order to update/patch using this plugin, you must recover the instance first, and then do [`instance.$query()`](http://vincit.github.io/objection.js/#_s_query). This will have a negative performance impact.
 
 To use, mixin the model:
 
@@ -58,26 +58,27 @@ If any of the unique checks fails, a [`ValidationError`](http://vincit.github.io
 
 Takes an **array of functions**, each:
 
-- Taking two arguments, a first with the new instance created, and a second with the old values if updating/patching an entry:
+- Taking three arguments, a first with the new instance created, a second with the old values if updating/patching an entry, and a third with the *query context*:
     - *New instance* object: Bear in mind, when it's a patch it might not have all the values.
     - *Previous instance* object: `undefined` when it's an insert (as there is no previous instance).
+    - [*Query context* object](http://vincit.github.io/objection.js/#context)
 - Optionally async/promise returning, and throwing an error to fail the check. For consistency, it would be recommended that you use the built-in [`ValidationError`](http://vincit.github.io/objection.js/#validationerror) via [`Model.createValidationError()`](http://vincit.github.io/objection.js/#createvalidationerror) to throw it. You can optionally also mutate the the *new instance* object before it's written to the database.
 
 ```javascript
 opts.before = [
-    async (newInstance, oldInstance) => {
+    async (newInstance, oldInstance, queryContext) => {
         // Maybe mutate the object like so
         newInstance.hash = await someAsyncHashFunction(newInstance.pass);
         delete newInstance.pass;
     },
-    async (newInstance, oldInstance) => {
+    async (newInstance) => {
         // Do some async checks
         // Throw if it fails
         if (await someValidationFails(newInstance)) {
             throw Error('Some Error');
         }
     },
-    (newInstance, oldInstance) => {
+    (newInstance) => {
         // Maybe some additional sync checks
         // Throw with a Model ValidationError
         if (someValidationFails(newInstance)) {
@@ -100,6 +101,8 @@ opts.before = [
 - `'before'`: Checks are run sequentially (next check only begins when the previous has ended) in the order they where passed. `before` checks are run first, then `unique`.
 - `'unique'`: Checks are run sequentially (next check only begins when the previous has ended) in the order they where passed. `unique` checks are run first, then `before`.
 
+**Setting precedence to any other than `'none'` will, however, negatively impact performance** (as checks are not being run in parallel).
+
 ```javascript
 opts.precendence = 'unique';
 ```
@@ -110,8 +113,8 @@ opts.precendence = 'unique';
 const Model = require('objection').Model;
 const beforeUnique = require('objection-before-and-unique');
 
-// Once you mixin the Model like so, you'll be able to define
-// `uniqueConstraints` and `beforeChecks` in your model
+// Mixin the Model like so, and define
+// `objection-before-and-unique` options
 class MyModel extends beforeUnique({
     precedence: 'none',
     unique: [
@@ -120,14 +123,19 @@ class MyModel extends beforeUnique({
         { col: 'alias', for: ['team_id'], message: 'The alias is already taken'}
     ],
     before: [
-        async (newInstance, oldInstance) => {
+        async (newInstance, oldInstance, queryContext) => {
+            // Maybe mutate the object like so
+            newInstance.hash = await someAsyncHashFunction(newInstance.pass);
+            delete newInstance.pass;
+        },
+        async (newInstance) => {
             // Do some async checks
             // Throw if it fails
             if (await someValidationFails(newInstance)) {
                 throw Error('Some Error');
             }
         },
-        (newInstance, oldInstance) => {
+        (newInstance) => {
             // Maybe some additional sync checks
             // Throw with a Model ValidationError
             if (someValidationFails(newInstance)) {
@@ -138,11 +146,6 @@ class MyModel extends beforeUnique({
                     }]
                 });
             }
-        },
-        async (newInstance, oldInstance) => {
-            // Maybe mutate the object like so
-            newInstance.hash = await someAsyncHashFunction(newInstance.pass);
-            delete newInstance.pass;
         }
     ]
 })(Model) {
