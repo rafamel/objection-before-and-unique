@@ -8,7 +8,7 @@
 [![Issues](https://img.shields.io/github/issues/rafamel/objection-before-and-unique.svg)](https://github.com/rafamel/objection-before-and-unique/issues)
 [![License](https://img.shields.io/github/license/rafamel/objection-before-and-unique.svg)](https://github.com/rafamel/objection-before-and-unique/blob/master/LICENSE)
 
-**Advanced unique validation + Simpler `before` API/checks for [Objection.js](http://vincit.github.io/objection.js/)**
+**Advanced unique validation + Simpler `before` checks + Final instance validation for [Objection.js](http://vincit.github.io/objection.js/)**
 
 ## Install
 
@@ -16,7 +16,7 @@
 
 ## Usage
 
-Because of the way `Objection.js` works, [as it doesn't recover and pass the previous instance implicitly when doing patches or updates through `Model.query()` to `$beforeUpdate`](http://vincit.github.io/objection.js/#_s_beforeupdate), any [Model.query()](http://vincit.github.io/objection.js/#query) update/patch method will fail. In order to update/patch using this plugin, you must recover the instance first, and then do [`instance.$query()`](http://vincit.github.io/objection.js/#_s_query). This will have a negative performance impact.
+Because of the way `Objection.js` works, [as it doesn't recover and pass the previous instance implicitly when doing patches or updates through `Model.query()` to `$beforeUpdate`](http://vincit.github.io/objection.js/#_s_beforeupdate), any [Model.query()](http://vincit.github.io/objection.js/#query) update/patch method will fail. In order to update/patch using this plugin, you must recover the instance first, and then do [`instance.$query()`](http://vincit.github.io/objection.js/#_s_query). This will have a negative performance impact... // chc
 
 To use, mixin the model:
 
@@ -29,6 +29,12 @@ class MyModel extends beforeUnique(opts)(Model) {
 ```
 
 Where `opts` is an object with the options taken by `objection-before-and-unique`:
+
+### `ignoreOld`
+
+Disabled for // chc
+To ensure consistency and prevent mistakes, it won't let...
+or pass `old` to the `before` functions.
 
 ### `unique`
 

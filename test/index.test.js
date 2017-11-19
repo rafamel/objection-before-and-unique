@@ -2,6 +2,7 @@
 const dbClear = require('./utils/db-clear');
 const userFactory = require('./utils/user-factory');
 const ValidationError = require('objection').ValidationError;
+const config = require('../lib/config');
 
 const id = (n) => `[${ String(n) }] `;
 
@@ -25,7 +26,7 @@ describe(`- Throws when invalid input / Doesn't with valid`, () => {
         test(id(1) + `Empty`, () => {
             expect(() => userFactory()).not.toThrowError();
         });
-        test(id(2) + `Valid before`, () => {
+        test(id(2) + `Before`, () => {
             expect(() => userFactory({ before: [() => {}] }))
                 .not.toThrowError();
         });
@@ -47,12 +48,18 @@ describe(`- Throws when invalid input / Doesn't with valid`, () => {
                 }]
             })).not.toThrowError();
         });
-        test(id(5) + `Valid precedence`, () => {
+        test(id(5) + `Precedence`, () => {
             expect(() => userFactory({ precedence: 'none' }))
                 .not.toThrowError();
             expect(() => userFactory({ precedence: 'before' }))
                 .not.toThrowError();
             expect(() => userFactory({ precedence: 'unique' }))
+                .not.toThrowError();
+        });
+        test(id(6) + `ignoreOld`, () => {
+            expect(() => userFactory({ ignoreOld: true }))
+                .not.toThrowError();
+            expect(() => userFactory({ ignoreOld: false }))
                 .not.toThrowError();
         });
     });
@@ -63,24 +70,18 @@ describe(`- Throws when invalid input / Doesn't with valid`, () => {
             expect(() => userFactory({ before: '' })).toThrowError();
             expect(() => userFactory({ before: [''] })).toThrowError();
         });
-        test(id(2) + `Precedence`, () => {
-            expect(() => userFactory({ precedence: 'some' }))
-                .toThrowError();
-            expect(() => userFactory({ precedence: 5 }))
-                .toThrowError();
-        });
-        test(id(3) + `Unique: wrong type`, () => {
+        test(id(2) + `Unique: wrong type`, () => {
             expect(() => userFactory({ unique: {} })).toThrowError();
         });
-        test(id(4) + `Unique: List of strings`, () => {
+        test(id(3) + `Unique: List of strings`, () => {
             expect(() => userFactory({ unique: [''] })).toThrowError();
         });
-        test(id(5) + `Unique: No 'col'`, () => {
+        test(id(4) + `Unique: No 'col'`, () => {
             expect(() => userFactory({
                 unique: [{ label: 'Name' }]
             })).toThrowError();
         });
-        test(id(6) + `Unique: Unknown key`, () => {
+        test(id(5) + `Unique: Unknown key`, () => {
             expect(() => userFactory({
                 unique: [{
                     col: 'name',
@@ -88,7 +89,7 @@ describe(`- Throws when invalid input / Doesn't with valid`, () => {
                 }]
             })).toThrowError();
         });
-        test(id(7) + `Unique: Wrong 'insensitive' type`, () => {
+        test(id(6) + `Unique: Wrong 'insensitive' type`, () => {
             expect(() => userFactory({
                 unique: [{
                     col: 'name',
@@ -96,7 +97,7 @@ describe(`- Throws when invalid input / Doesn't with valid`, () => {
                 }]
             })).toThrowError();
         });
-        test(id(8) + `Unique: Wrong 'for' type`, () => {
+        test(id(7) + `Unique: Wrong 'for' type`, () => {
             expect(() => userFactory({
                 unique: [{
                     col: 'name',
@@ -104,7 +105,7 @@ describe(`- Throws when invalid input / Doesn't with valid`, () => {
                 }]
             })).toThrowError();
         });
-        test(id(9) + `Unique: Empty strings`, () => {
+        test(id(8) + `Unique: Empty strings`, () => {
             expect(() => userFactory({
                 unique: [{ col: '' }]
             })).toThrowError();
@@ -118,6 +119,26 @@ describe(`- Throws when invalid input / Doesn't with valid`, () => {
                     col: 'name',
                     message: ''
                 }]
+            })).toThrowError();
+        });
+        test(id(9) + `Precedence`, () => {
+            expect(() => userFactory({ precedence: 'some' }))
+                .toThrowError();
+            expect(() => userFactory({ precedence: 5 }))
+                .toThrowError();
+        });
+        test(id(10) + `ignoreOld: Basic`, () => {
+            expect(() => userFactory({ ignoreOld: 'some' }))
+                .toThrowError();
+            expect(() => userFactory({ ignoreOld: '' }))
+                .toThrowError();
+            expect(() => userFactory({ ignoreOld: 5 }))
+                .toThrowError();
+        });
+        test(id(11) + `ignoreOld: Disable unique for`, () => {
+            expect(() => userFactory({
+                ignoreOld: true,
+                unique: [{ col: 'name', for: ['some'] }]
             })).toThrowError();
         });
     });
@@ -171,7 +192,7 @@ describe(`- Unique`, () => {
             await expect(promise1).rejects
                 .toBeInstanceOf(Error);
             await expect(promise1).rejects
-                .toHaveProperty('message', `'unique' and 'before' at update only work with instance queries ($query()).`);
+                .toHaveProperty('message', `'unique' and 'before' at update only work with instance queries ($query()) for ${config.moduleName}`);
 
             // Update
             const promise2 = User.query()
@@ -402,3 +423,24 @@ describe(`- Precedence`, () => {
             .toBeInstanceOf(ValidationError);
     });
 });
+
+// describe(`- ignoreOld`, () => {
+//     test(id(1) + `Disable for in unique`, async () => {
+//         await clearAndInsert();
+//         const opts = {
+//             precedence: 'before',
+//             unique: [{ col: 'username', for: ['hash'] }]
+//         };
+
+//         const promise1 = userFactory(opts).query()
+//             .insert({ username: 'prince' });
+//         await expect(promise1).resolves
+//             .toHaveProperty('username', 'princehello');
+
+//         opts.precedence = 'unique';
+//         const promise2 = userFactory(opts).query()
+//             .insert({ username: 'prince' });
+//         await expect(promise2).rejects
+//             .toBeInstanceOf(ValidationError);
+//     });
+// });

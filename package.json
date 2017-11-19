@@ -2,7 +2,7 @@
   "name": "objection-before-and-unique",
   "version": "0.1.0",
   "author": "Rafa Mel",
-  "description": "Advanced unique validation + Simpler before API/checks for Objection.js",
+  "description": "Advanced unique validation + Simpler before checks + Final instance validation for Objection.js",
   "homepage": "https://github.com/rafamel/objection-before-and-unique",
   "main": "./lib/index",
   "scripts": {
