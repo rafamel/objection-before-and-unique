@@ -16,7 +16,7 @@
 
 ## Usage
 
-Because of the way `Objection.js` works, [as it doesn't recover and pass the previous instance implicitly when doing patches or updates through `Model.query()` to `$beforeUpdate`](http://vincit.github.io/objection.js/#_s_beforeupdate), any [Model.query()](http://vincit.github.io/objection.js/#query) update/patch method will fail. In order to update/patch using this plugin, you must recover the instance first, and then do [`instance.$query()`](http://vincit.github.io/objection.js/#_s_query). This will have a negative performance impact... // chc
+Because of the way `Objection.js` works, [as it doesn't recover and pass the previous instance implicitly when doing patches or updates through `Model.query()` to `$beforeUpdate`](http://vincit.github.io/objection.js/#_s_beforeupdate), any [Model.query()](http://vincit.github.io/objection.js/#query) update/patch method will fail. In order to update/patch using this plugin, you must recover the instance first, and then do [`instance.$query()`](http://vincit.github.io/objection.js/#_s_query). This will have a negative performance impact.
 
 To use, mixin the model:
 
@@ -29,12 +29,6 @@ class MyModel extends beforeUnique(opts)(Model) {
 ```
 
 Where `opts` is an object with the options taken by `objection-before-and-unique`:
-
-### `old`
-
-Disabled for // chc
-To ensure consistency and prevent mistakes, it won't let...
-or pass `old` to the `before` functions.
 
 ### `unique`
 
@@ -64,30 +58,41 @@ If any of the unique checks fails, a [`ValidationError`](http://vincit.github.io
 
 Takes an **array of functions**, each:
 
-- Taking three arguments, a first with the new instance created, a second with the old values if updating/patching an entry, and a third with the *query context*:
-    - *New instance* object: Bear in mind, when it's a patch it might not have all the values.
-    - *Previous instance* object: `undefined` when it's an insert (as there is no previous instance).
-    - [*Query context* object](http://vincit.github.io/objection.js/#context)
-- Optionally async/promise returning, and throwing an error to fail the check. For consistency, it would be recommended that you use the built-in [`ValidationError`](http://vincit.github.io/objection.js/#validationerror) via [`Model.createValidationError()`](http://vincit.github.io/objection.js/#createvalidationerror) to throw it. You can optionally also mutate the the *new instance* object before it's written to the database.
+- Taking an object with keys:
+    - `instance`: The new model instance created by the insert/update/patch. Keep in mind that, if the operation is a patch, the instance data might not be complete.
+    - `old`: The old model instance (with the values prior to the update/patch operation). It is `undefined` when the operation is an insert (as there is no previous instance), and [inexistent/not passed when opts.old is set to `false`](#old).
+    - `context`: The [*query context*](http://vincit.github.io/objection.js/#context) object.
+    - `operation`: *String*. The type of operation; it can have values `'insert'`, `'update'`, or `'patch'`.
+- Optionally async/promise returning, and throwing an error to fail the check. For consistency, it would be recommended that you use the built-in [`ValidationError`](http://vincit.github.io/objection.js/#validationerror) via [`Model.createValidationError()`](http://vincit.github.io/objection.js/#createvalidationerror) to throw it. You can optionally also mutate the the `instance` object before it's written to the database.
+
+You can [destructure](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment) the object each function takes as desired:
 
 ```javascript
 opts.before = [
-    async (newInstance, oldInstance, queryContext) => {
+    ({ instance, old, operation, context }) => {
         // Maybe mutate the object like so
-        newInstance.hash = await someAsyncHashFunction(newInstance.pass);
-        delete newInstance.pass;
+        if (operation !== 'insert' && old.someProperty) {
+            instance.someProperty += old.someProperty;
+        } else if (context.toAdd) {
+            instance.someProperty += context.toAdd;
+        }
     },
-    async (newInstance) => {
+    async ({ instance }) => {
+        // Or mutate the object asynchronously like so
+        instance.hash = await someAsyncHashFunction(instance.password);
+        delete instance.password;
+    },
+    async ({ instance }) => {
         // Do some async checks
         // Throw if it fails
-        if (await someValidationFails(newInstance)) {
+        if (await someValidationFails(instance)) {
             throw Error('Some Error');
         }
     },
-    (newInstance) => {
+    ({ instance }) => {
         // Maybe some additional sync checks
         // Throw with a Model ValidationError
-        if (someValidationFails(newInstance)) {
+        if (someValidationFails(instance)) {
             throw Model.createValidationError({
                 someKey: [{
                     message: 'Some message',
@@ -129,22 +134,30 @@ class MyModel extends beforeUnique({
         { col: 'alias', for: ['team_id'], message: 'The alias is already taken'}
     ],
     before: [
-        async (newInstance, oldInstance, queryContext) => {
+        ({ instance, old, operation, context }) => {
             // Maybe mutate the object like so
-            newInstance.hash = await someAsyncHashFunction(newInstance.pass);
-            delete newInstance.pass;
+            if (operation !== 'insert' && old.someProperty) {
+                instance.someProperty += old.someProperty;
+            } else if (context.toAdd) {
+                instance.someProperty += context.toAdd;
+            }
         },
-        async (newInstance) => {
+        async ({ instance }) => {
+            // Or mutate the object asynchronously like so
+            instance.hash = await someAsyncHashFunction(instance.password);
+            delete instance.password;
+        },
+        async ({ instance }) => {
             // Do some async checks
             // Throw if it fails
-            if (await someValidationFails(newInstance)) {
+            if (await someValidationFails(instance)) {
                 throw Error('Some Error');
             }
         },
-        (newInstance) => {
+        ({ instance }) => {
             // Maybe some additional sync checks
             // Throw with a Model ValidationError
-            if (someValidationFails(newInstance)) {
+            if (someValidationFails(instance)) {
                 throw Model.createValidationError({
                     someKey: [{
                         message: 'Some message',

@@ -167,38 +167,37 @@ describe(`- Unique`, () => {
         });
         test(id(2) + `Error/ValidationError (insert)`, async () => {
             await clearAndInsert();
-            const promise = User.query().insert({ username: 'prince' });
+            const doInsert = User.query().insert({ username: 'prince' });
 
-            await expect(promise).rejects
+            await expect(doInsert).rejects
                 .toBeInstanceOf(Error);
-            await expect(promise).rejects
+            await expect(doInsert).rejects
                 .toBeInstanceOf(ValidationError);
         });
         test(id(3) + `ValidationError (patch & update)`, async () => {
             const user = await User.query().first().where('username', 'isma');
-            const promise1 = user.$query().patchAndFetch({ username: 'prince' });
-            const promise2 = user.$query().update({ username: 'prince' });
+            const doPatch = user.$query().patchAndFetch({ username: 'prince' });
+            const doUpdate = user.$query().update({ username: 'prince' });
 
-            await expect(promise1).rejects
+            await expect(doPatch).rejects
                 .toBeInstanceOf(ValidationError);
-            await expect(promise2).rejects
+            await expect(doUpdate).rejects
                 .toBeInstanceOf(ValidationError);
         });
         test(id(4) + `Errors out when updating/patching from Model`, async () => {
-            // Patch
-            const promise1 = User.query()
+            const doPatch = User.query()
                 .patch({ username: 'other' })
                 .where('username', 'isma');
-            await expect(promise1).rejects
+
+            await expect(doPatch).rejects
                 .toBeInstanceOf(Error);
-            await expect(promise1).rejects
+            await expect(doPatch).rejects
                 .toHaveProperty('message', `'unique' and 'before' at update only work with instance queries ($query()) for ${config.moduleName}`);
 
-            // Update
-            const promise2 = User.query()
+            const doUpdate = User.query()
                 .update({ username: 'other' })
                 .where('username', 'isma');
-            await expect(promise2).rejects
+            await expect(doUpdate).rejects
                 .toBeInstanceOf(Error);
         });
         test(id(5) + `Multiple uniques`, async () => {
@@ -230,10 +229,11 @@ describe(`- Unique`, () => {
             const User = userFactory({
                 unique: [{ col: 'username', label: 'User' }]
             });
-            const promise = User.query()
+
+            const doInsert = User.query()
                 .insert({ username: 'prince' })
                 .catch(err => err.data.username[0]);
-            await expect(promise).resolves
+            await expect(doInsert).resolves
                 .toHaveProperty('message', 'User already exists.');
         });
         test(id(2) + `Insensitive`, async () => {
@@ -291,6 +291,7 @@ describe(`- Unique`, () => {
                 .andWhere('hash', '55555');
             const promise4 = user.$query().patchAndFetch({ email: 'other@email.com' });
             const promise5 = user.$query().patchAndFetch({ email: 'other@email.com', hash: '123456' });
+
             await expect(promise4).rejects
                 .toBeInstanceOf(ValidationError);
             await expect(promise5).resolves
@@ -304,96 +305,201 @@ describe(`- Unique`, () => {
                     message: 'A message'
                 }]
             });
-            const promise = User.query()
+
+            const doInsert = User.query()
                 .insert({ username: 'prince' })
                 .catch(err => err.data.username[0]);
-            await expect(promise).resolves
+            await expect(doInsert).resolves
                 .toHaveProperty('message', 'A message');
         });
     });
+});
 
-    describe(`- Before`, () => {
-        describe(`- Mutation`, () => {
-            test(id(1) + `No async`, async () => {
-                await clearAndInsert();
-                const User = userFactory({
-                    before: [
-                        (newer) => {
-                            newer.username += 'hello';
+describe(`- Before`, () => {
+    describe(`- Receives object keys`, () => {
+        test(id(1) + `instance`, async () => {
+            await clearAndInsert();
+            const User = userFactory({
+                before: [
+                    ({instance}) => {
+                        if (instance.username !== 'Hi') {
+                            throw Error();
                         }
-                    ]
-                });
-                const promise = User.query()
-                    .insert({ username: 'hola' });
-                await expect(promise).resolves
-                    .toHaveProperty('username', 'holahello');
+                    }
+                ]
             });
-            test(id(2) + `Async + Receives oldInstance`, async () => {
-                const getStr = async () => 'tail';
-                const User = userFactory({
-                    before: [
-                        async (newer, older) => {
-                            if (older) {
-                                newer.username = older.username + await getStr();
-                            }
-                        }
-                    ]
-                });
-                const promise = (
-                    await User.query()
-                        .first()
-                        .where('username', 'holahello')
-                ).$query().patchAndFetch({ username: 'goodbye' });
-                await expect(promise).resolves
-                    .toHaveProperty('username', 'holahellotail');
-            });
+
+            const doInsert = User.query().insert({ username: 'Hi' });
+            const doUpdate = User.query()
+                .first()
+                .where('username', 'isma')
+                .then(m => m.$query()
+                    .updateAndFetch({ username: 'Hi' })
+                );
+            const doPatch = User.query()
+                .first()
+                .where('username', 'prince')
+                .then(m => m.$query()
+                    .patchAndFetch({ username: 'Hi' })
+                );
+
+            await expect(doInsert).resolves
+                .toHaveProperty('username', 'Hi');
+            await expect(doUpdate).resolves
+                .toHaveProperty('username', 'Hi');
+            await expect(doPatch).resolves
+                .toHaveProperty('username', 'Hi');
         });
+        test(id(2) + `old`, async () => {
+            await clearAndInsert();
+            const User = userFactory({
+                before: [
+                    (obj) => {
+                        if (!obj.hasOwnProperty('old')) {
+                            throw Error('Old is not received even if undefined');
+                        } else if (obj.old.username !== 'prince') {
+                            throw Error();
+                        }
+                    }
+                ]
+            });
 
-        describe(`- Checks/Throws`, () => {
-            test(id(1) + `Sync`, async () => {
-                const User = userFactory({
-                    before: [
-                        () => {
-                            throw Error('Some Error');
-                        }
-                    ]
-                });
-                const promise = User.query()
-                    .insert({ username: 'hola' });
-                await expect(promise).rejects
-                    .toBeInstanceOf(Error);
-            });
-            test(id(2) + `Async`, async () => {
-                const User = userFactory({
-                    before: [
-                        async () => {
-                            throw Error('Some Error');
-                        }
-                    ]
-                });
-                const promise = User.query()
-                    .insert({ username: 'hola' });
-                await expect(promise).rejects
-                    .toBeInstanceOf(Error);
-            });
+            const doInsert = User.query().insert({ username: 'hello' });
+            const doUpdate = User.query()
+                .first()
+                .where('username', 'prince')
+                .then(m => m.$query()
+                    .update({ username: 'prince' })
+                );
+            const doPatch = User.query()
+                .first()
+                .where('username', 'prince')
+                .then(m => m.$query()
+                    .patch({ username: 'prince' })
+                );
+
+            await expect(doInsert).rejects.toBeInstanceOf(Error);
+            await expect(doInsert).rejects.not.toHaveProperty('message', 'Old is not received even if undefined');
+            await expect(doUpdate).resolves.toBe(1);
+            await expect(doPatch).resolves.toBe(1);
         });
-
-        describe(`- Receives query context`, () => {
-            test(id(1), async () => {
-                await clearAndInsert();
-                const User = userFactory({
-                    before: [
-                        (newer, _, ctx) => {
-                            newer.username = ctx.name;
-                        }
-                    ]
-                });
-                const promise = User.query()
-                    .context({ name: 'Hi' })
-                    .insert({});
-                await expect(promise).resolves
-                    .toHaveProperty('username', 'Hi');
+        test(id(3) + `context`, async () => {
+            await clearAndInsert();
+            const User = userFactory({
+                before: [
+                    ({instance, context}) => {
+                        instance.username = context.name;
+                    }
+                ]
             });
+
+            const doInsert = User.query()
+                .context({ name: 'Hi' })
+                .insert({});
+            await expect(doInsert).resolves
+                .toHaveProperty('username', 'Hi');
+        });
+        test(id(4) + `operation`, async () => {
+            await clearAndInsert();
+            const User = userFactory({
+                before: [
+                    ({context, operation}) => {
+                        if (operation !== context.op) {
+                            throw Error();
+                        }
+                    }
+                ]
+            });
+
+            const doInsert = User.query()
+                .context({ op: 'insert' })
+                .insert({ username: 'some' });
+            const doUpdate = User.query()
+                .first()
+                .where('username', 'isma')
+                .then(m => m.$query()
+                    .context({ op: 'update' })
+                    .update({ username: 'some' })
+                );
+            const doPatch = User.query()
+                .first()
+                .where('username', 'prince')
+                .then(m => m.$query()
+                    .context({ op: 'patch' })
+                    .patch({ username: 'some' })
+                );
+
+            await expect(doInsert).resolves
+                .toHaveProperty('username', 'some');
+            await expect(doUpdate).resolves.toBe(1);
+            await expect(doPatch).resolves.toBe(1);
+        });
+    });
+    describe(`- Mutation`, () => {
+        test(id(1) + `No async`, async () => {
+            await clearAndInsert();
+            const User = userFactory({
+                before: [
+                    ({instance}) => {
+                        instance.username += 'hello';
+                    }
+                ]
+            });
+
+            const doInsert = User.query()
+                .insert({ username: 'hola' });
+            await expect(doInsert).resolves
+                .toHaveProperty('username', 'holahello');
+        });
+        test(id(2) + `Async`, async () => {
+            const getStr = async () => 'tail';
+            const User = userFactory({
+                before: [
+                    async ({instance, old}) => {
+                        instance.username = old.username + await getStr();
+                    }
+                ]
+            });
+
+            const doPatch = User.query()
+                .first()
+                .where('username', 'holahello')
+                .then(m => m.$query()
+                    .patchAndFetch({ username: 'goodbye' })
+                );
+            await expect(doPatch).resolves
+                .toHaveProperty('username', 'holahellotail');
+        });
+    });
+
+    describe(`- Checks/Throws`, () => {
+        test(id(1) + `Sync`, async () => {
+            const User = userFactory({
+                before: [
+                    () => {
+                        throw Error('Some Error');
+                    }
+                ]
+            });
+
+            const doInsert = User.query()
+                .insert({ username: 'hola' });
+            await expect(doInsert).rejects
+                .toBeInstanceOf(Error);
+        });
+        test(id(2) + `Async`, async () => {
+            const User = userFactory({
+                before: [
+                    async () => {
+                        throw Error('Some Error');
+                    }
+                ]
+            });
+
+            const doInsert = User.query()
+                .insert({ username: 'hola' });
+            await expect(doInsert).rejects
+                .toBeInstanceOf(Error);
         });
     });
 });
@@ -405,21 +511,21 @@ describe(`- Precedence`, () => {
             precedence: 'before',
             unique: [{ col: 'username' }],
             before: [
-                async (newer) => {
-                    newer.username += 'hello';
+                async ({instance}) => {
+                    instance.username += 'hello';
                 }
             ]
         };
 
-        const promise1 = userFactory(opts).query()
+        const doPrecedenceBefore = userFactory(opts).query()
             .insert({ username: 'prince' });
-        await expect(promise1).resolves
+        await expect(doPrecedenceBefore).resolves
             .toHaveProperty('username', 'princehello');
 
         opts.precedence = 'unique';
-        const promise2 = userFactory(opts).query()
+        const doPrecedenceUnique = userFactory(opts).query()
             .insert({ username: 'prince' });
-        await expect(promise2).rejects
+        await expect(doPrecedenceUnique).rejects
             .toBeInstanceOf(ValidationError);
     });
 });
@@ -435,36 +541,67 @@ describe(`- Old`, () => {
     test(id(1) + `Doesn't reject Model patches`, async () => {
         await clearAndInsert();
 
-        const promise = User.query()
+        const doPatch = User.query()
             .first()
             .where('username', 'prince')
             .patch({ username: 'another' });
 
-        await expect(promise).resolves.toBe(1);
+        await expect(doPatch).resolves.toBe(1);
     });
     test(id(2) + `Doesn't reject Model updates`, async () => {
         await clearAndInsert();
 
-        const promise = User.query()
+        const doUpdate = User.query()
             .first()
             .where('username', 'prince')
             .update({ username: 'another' });
 
-        await expect(promise).resolves.toBe(1);
+        await expect(doUpdate).resolves.toBe(1);
     });
     test(id(3) + `Doesn't take updates with the same value for the same record`, async () => {
         await clearAndInsert();
 
-        const promise1 = User.query()
-            .first()
-            .where('username', 'prince')
-            .patch({ username: 'prince' });
-        const promise2 = User.query()
+        const doUpdate = User.query()
             .first()
             .where('username', 'prince')
             .update({ username: 'prince' });
+        const doPatch = User.query()
+            .first()
+            .where('username', 'prince')
+            .patch({ username: 'prince' });
 
-        await expect(promise1).rejects.toBeInstanceOf(ValidationError);
-        await expect(promise2).rejects.toBeInstanceOf(ValidationError);
+        await expect(doUpdate).rejects.toBeInstanceOf(ValidationError);
+        await expect(doPatch).rejects.toBeInstanceOf(ValidationError);
+    });
+    test(id(4) + `Doesn't send old to before fns`, async () => {
+        await clearAndInsert();
+        const UserEx = userFactory({
+            old: false,
+            before: [
+                (obj) => {
+                    if (obj.hasOwnProperty('old')) {
+                        throw Error();
+                    }
+                }
+            ]
+        });
+
+        const doInsert = UserEx.query().insert({ username: 'some' });
+        const doUpdate = UserEx.query()
+            .first()
+            .where('username', 'isma')
+            .then(m => m.$query()
+                .update({ username: 'some' })
+            );
+        const doPatch = UserEx.query()
+            .first()
+            .where('username', 'prince')
+            .then(m => m.$query()
+                .patch({ username: 'some' })
+            );
+
+        await expect(doInsert).resolves.toHaveProperty('username', 'some');
+        await expect(doUpdate).resolves.toBe(1);
+        await expect(doPatch).resolves.toBe(1);
     });
 });
