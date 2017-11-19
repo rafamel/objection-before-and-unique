@@ -14,14 +14,6 @@
 
 [`npm install objection-before-and-unique`](https://www.npmjs.com/package/objection-before-and-unique)
 
-## Todo
-
-- Test ignoreOld
-- before receive object + patch + this - [destructure](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Destructuring_assignment)
-- flowi or joi validation: as it is a partial validation. Intended so the main structure is on jsonSchema. Specify options for Joi.validate(). Even though Joi/Flowi, errors are thrown via Model.createValidationError().
-- fetching: 'implicit', 'explicit', 'ignore'
-- Readme: because it uses $beforeInsert and $beforeUpdate, remember to, if changed in your model, always resolve `super` first.
-
 ## Usage
 
 Because of the way `Objection.js` works, [as it doesn't recover and pass the previous instance implicitly when doing patches or updates through `Model.query()` to `$beforeUpdate`](http://vincit.github.io/objection.js/#_s_beforeupdate), any [Model.query()](http://vincit.github.io/objection.js/#query) update/patch method will fail. In order to update/patch using this plugin, you must recover the instance first, and then do [`instance.$query()`](http://vincit.github.io/objection.js/#_s_query). This will have a negative performance impact... // chc
@@ -38,7 +30,7 @@ class MyModel extends beforeUnique(opts)(Model) {
 
 Where `opts` is an object with the options taken by `objection-before-and-unique`:
 
-### `ignoreOld`
+### `old`
 
 Disabled for // chc
 To ensure consistency and prevent mistakes, it won't let...

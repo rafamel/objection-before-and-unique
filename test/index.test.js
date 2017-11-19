@@ -56,10 +56,10 @@ describe(`- Throws when invalid input / Doesn't with valid`, () => {
             expect(() => userFactory({ precedence: 'unique' }))
                 .not.toThrowError();
         });
-        test(id(6) + `ignoreOld`, () => {
-            expect(() => userFactory({ ignoreOld: true }))
+        test(id(6) + `old`, () => {
+            expect(() => userFactory({ old: true }))
                 .not.toThrowError();
-            expect(() => userFactory({ ignoreOld: false }))
+            expect(() => userFactory({ old: false }))
                 .not.toThrowError();
         });
     });
@@ -127,17 +127,17 @@ describe(`- Throws when invalid input / Doesn't with valid`, () => {
             expect(() => userFactory({ precedence: 5 }))
                 .toThrowError();
         });
-        test(id(10) + `ignoreOld: Basic`, () => {
-            expect(() => userFactory({ ignoreOld: 'some' }))
+        test(id(10) + `Old: Basic`, () => {
+            expect(() => userFactory({ old: 'some' }))
                 .toThrowError();
-            expect(() => userFactory({ ignoreOld: '' }))
+            expect(() => userFactory({ old: '' }))
                 .toThrowError();
-            expect(() => userFactory({ ignoreOld: 5 }))
+            expect(() => userFactory({ old: 5 }))
                 .toThrowError();
         });
-        test(id(11) + `ignoreOld: Disable unique for`, () => {
+        test(id(11) + `Old: Disable unique for`, () => {
             expect(() => userFactory({
-                ignoreOld: true,
+                old: false,
                 unique: [{ col: 'name', for: ['some'] }]
             })).toThrowError();
         });
@@ -424,23 +424,47 @@ describe(`- Precedence`, () => {
     });
 });
 
-// describe(`- ignoreOld`, () => {
-//     test(id(1) + `Disable for in unique`, async () => {
-//         await clearAndInsert();
-//         const opts = {
-//             precedence: 'before',
-//             unique: [{ col: 'username', for: ['hash'] }]
-//         };
+describe(`- Old`, () => {
+    const User = userFactory({
+        old: false,
+        unique: [
+            { col: 'username' },
+            { col: 'email' }
+        ]
+    });
+    test(id(1) + `Doesn't reject Model patches`, async () => {
+        await clearAndInsert();
 
-//         const promise1 = userFactory(opts).query()
-//             .insert({ username: 'prince' });
-//         await expect(promise1).resolves
-//             .toHaveProperty('username', 'princehello');
+        const promise = User.query()
+            .first()
+            .where('username', 'prince')
+            .patch({ username: 'another' });
 
-//         opts.precedence = 'unique';
-//         const promise2 = userFactory(opts).query()
-//             .insert({ username: 'prince' });
-//         await expect(promise2).rejects
-//             .toBeInstanceOf(ValidationError);
-//     });
-// });
+        await expect(promise).resolves.toBe(1);
+    });
+    test(id(2) + `Doesn't reject Model updates`, async () => {
+        await clearAndInsert();
+
+        const promise = User.query()
+            .first()
+            .where('username', 'prince')
+            .update({ username: 'another' });
+
+        await expect(promise).resolves.toBe(1);
+    });
+    test(id(3) + `Doesn't take updates with the same value for the same record`, async () => {
+        await clearAndInsert();
+
+        const promise1 = User.query()
+            .first()
+            .where('username', 'prince')
+            .patch({ username: 'prince' });
+        const promise2 = User.query()
+            .first()
+            .where('username', 'prince')
+            .update({ username: 'prince' });
+
+        await expect(promise1).rejects.toBeInstanceOf(ValidationError);
+        await expect(promise2).rejects.toBeInstanceOf(ValidationError);
+    });
+});
