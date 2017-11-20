@@ -115,7 +115,7 @@ opts.before = [
 
 ### `opts.schema`
 
-*Optional,* [*Joi schema object.*](https://github.com/hapijs/joi/blob/master/API.md#validatevalue-schema-options-callback)
+*Optional,* [**Joi schema object.**](https://github.com/hapijs/joi/blob/master/API.md#validatevalue-schema-options-callback)
 
 Intended as a partial validation for anything that might have changed via your [`before`](#optsbefore) checks since the instance was created and validated via the default *Objection.js* validator (which always runs before).
 
@@ -148,16 +148,10 @@ opts.schema = Joi.object().keys({
 
 *Optional.* Defines the order in which the checks should run.
 
-**Object** with keys.
+**Object** with keys:
 
-- `first`: *String.* Valid values are:
-    - `'before'`
-    - `'unique'`
-    - `'schema'`
-- `last`: *String.* Valid values are:
-    - `'before'`
-    - `'unique'`
-    - `'schema'`
+- `first`: *String.* Valid values are: `'before'`, `'unique'`, and `'schema'`.
+- `last`: *String.* Valid values are: `'before'`, `'unique'`, and `'schema'`.
 
 If `first` has a value of `'before'` and `last` of `'unique'`, checks will be run in the following order (next will only begin once the previous has ended):
 
