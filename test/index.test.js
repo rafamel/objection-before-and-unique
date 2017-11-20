@@ -1,4 +1,6 @@
 'use strict';
+const Joi = require('joi');
+const sleep = require('sleep-promise');
 const dbClear = require('./utils/db-clear');
 const userFactory = require('./utils/user-factory');
 const ValidationError = require('objection').ValidationError;
@@ -49,14 +51,29 @@ describe(`- Throws when invalid input / Doesn't with valid`, () => {
             })).not.toThrowError();
         });
         test(id(5) + `Precedence`, () => {
-            expect(() => userFactory({ precedence: 'none' }))
+            expect(() => userFactory({ precedence: {} }))
                 .not.toThrowError();
-            expect(() => userFactory({ precedence: 'before' }))
+            expect(() => userFactory({ precedence: { first: 'before' } }))
                 .not.toThrowError();
-            expect(() => userFactory({ precedence: 'unique' }))
+            expect(() => userFactory({ precedence: { first: 'unique' } }))
+                .not.toThrowError();
+            expect(() => userFactory({ precedence: { first: 'schema' } }))
+                .not.toThrowError();
+            expect(() => userFactory({ precedence: { last: 'before' } }))
+                .not.toThrowError();
+            expect(() => userFactory({ precedence: { last: 'unique' } }))
+                .not.toThrowError();
+            expect(() => userFactory({ precedence: { last: 'schema' } }))
+                .not.toThrowError();
+            expect(() => userFactory({
+                precedence: { first: 'schema', last: 'before' }
+            })).not.toThrowError();
+        });
+        test(id(6) + `schema`, () => {
+            expect(() => userFactory({ schema: Joi.object() }))
                 .not.toThrowError();
         });
-        test(id(6) + `old`, () => {
+        test(id(7) + `old`, () => {
             expect(() => userFactory({ old: true }))
                 .not.toThrowError();
             expect(() => userFactory({ old: false }))
@@ -126,8 +143,23 @@ describe(`- Throws when invalid input / Doesn't with valid`, () => {
                 .toThrowError();
             expect(() => userFactory({ precedence: 5 }))
                 .toThrowError();
+            expect(() => userFactory({ precedence: { some: 1 } }))
+                .toThrowError();
+            expect(() => userFactory({ precedence: { some: 'before' } }))
+                .toThrowError();
+            expect(() => userFactory({
+                precedence: { first: 'before', last: 'before' }
+            })).toThrowError();
         });
-        test(id(10) + `Old: Basic`, () => {
+        test(id(10) + `Schema`, () => {
+            expect(() => userFactory({ schema: 'some' }))
+                .toThrowError();
+            expect(() => userFactory({ schema: {} }))
+                .toThrowError();
+            expect(() => userFactory({ schema: 5 }))
+                .toThrowError();
+        });
+        test(id(11) + `Old: Basic`, () => {
             expect(() => userFactory({ old: 'some' }))
                 .toThrowError();
             expect(() => userFactory({ old: '' }))
@@ -135,7 +167,7 @@ describe(`- Throws when invalid input / Doesn't with valid`, () => {
             expect(() => userFactory({ old: 5 }))
                 .toThrowError();
         });
-        test(id(11) + `Old: Disable unique for`, () => {
+        test(id(12) + `Old: Disable unique for`, () => {
             expect(() => userFactory({
                 old: false,
                 unique: [{ col: 'name', for: ['some'] }]
@@ -168,11 +200,17 @@ describe(`- Unique`, () => {
         test(id(2) + `Error/ValidationError (insert)`, async () => {
             await clearAndInsert();
             const doInsert = User.query().insert({ username: 'prince' });
+            const catcher = doInsert.catch(err => err.data);
+            const catchInside = catcher.then(data => data['username'][0]);
 
             await expect(doInsert).rejects
                 .toBeInstanceOf(Error);
             await expect(doInsert).rejects
                 .toBeInstanceOf(ValidationError);
+            await expect(catcher).resolves
+                .toHaveProperty('username');
+            await expect(catchInside).resolves
+                .toHaveProperty('keyword', 'unique');
         });
         test(id(3) + `ValidationError (patch & update)`, async () => {
             const user = await User.query().first().where('username', 'isma');
@@ -504,28 +542,136 @@ describe(`- Before`, () => {
     });
 });
 
-describe(`- Precedence`, () => {
-    test(id(1), async () => {
+describe(`- Schema`, () => {
+    test(id(1) + `Not pass`, async () => {
         await clearAndInsert();
-        const opts = {
-            precedence: 'before',
-            unique: [{ col: 'username' }],
+        const User = userFactory({
+            schema: Joi.object().keys({
+                a: Joi.object().keys({
+                    b: Joi.any().required()
+                }).required()
+            })
+        });
+
+        const promise = User.query()
+            .insert({ username: 'hola', a: {} });
+        const catcher = promise.catch(err => err.data);
+        const catchInside = catcher.then(data => data['a'][0]);
+
+        await expect(promise).rejects
+            .toBeInstanceOf(ValidationError);
+        await expect(catcher).resolves
+            .toHaveProperty('a');
+        await expect(catchInside).resolves
+            .toHaveProperty('keyword', 'schema');
+    });
+    test(id(2) + `Pass`, async () => {
+        await clearAndInsert();
+        const User = userFactory({
+            schema: Joi.object().keys({
+                hash: Joi.string().required(),
+                password: Joi.any().forbidden()
+            }),
             before: [
-                async ({instance}) => {
-                    instance.username += 'hello';
+                ({ instance }) => {
+                    if (!instance.password) throw Error();
+                    instance.hash = instance.password + '1';
+                    delete instance.password;
                 }
             ]
-        };
+        });
 
-        const doPrecedenceBefore = userFactory(opts).query()
-            .insert({ username: 'prince' });
-        await expect(doPrecedenceBefore).resolves
-            .toHaveProperty('username', 'princehello');
+        const doInsert = await User.query()
+            .insert({ password: 'hello' });
+        expect(doInsert)
+            .toHaveProperty('hash', 'hello1');
+        expect(doInsert)
+            .not.toHaveProperty('password');
+    });
+});
 
-        opts.precedence = 'unique';
-        const doPrecedenceUnique = userFactory(opts).query()
-            .insert({ username: 'prince' });
-        await expect(doPrecedenceUnique).rejects
+describe(`- Precedence`, () => {
+    const opts = {
+        schema: Joi.object().keys({
+            hash: Joi.string().required(),
+            password: Joi.any().forbidden()
+        }),
+        unique: [{ col: 'hash' }],
+        before: [
+            async ({instance}) => {
+                await sleep(1000);
+                if (!instance.password) throw Error();
+                instance.hash = instance.password;
+                delete instance.password;
+            }
+        ]
+    };
+    test(id(1) + `First (defaults: before, schema, unique)`, async () => {
+        await clearAndInsert();
+
+        const promise = userFactory(opts).query()
+            .insert({ password: 'hi', hash: '123456' });
+
+        await expect(promise).resolves
+            .toHaveProperty('hash', 'hi');
+    });
+    test(id(2), async () => {
+        await clearAndInsert();
+
+        opts.precedence = { first: 'before', last: 'schema' };
+        const promise = userFactory(opts).query()
+            .insert({ password: 'hi', hash: '123456' });
+
+        await expect(promise).resolves
+            .toHaveProperty('hash', 'hi');
+    });
+    test(id(3), async () => {
+        await clearAndInsert();
+
+        opts.precedence = { last: 'unique' };
+        const promise = userFactory(opts).query()
+            .insert({ password: 'hi', hash: '123456' });
+
+        await expect(promise).rejects
+            .toBeInstanceOf(ValidationError);
+    });
+    test(id(4), async () => {
+        await clearAndInsert();
+
+        opts.precedence = { first: 'unique' };
+        const promise = userFactory(opts).query()
+            .insert({ password: 'hi', hash: '123456' });
+
+        await expect(promise).rejects
+            .toBeInstanceOf(ValidationError);
+    });
+    test(id(5), async () => {
+        await clearAndInsert();
+
+        opts.precedence = { first: 'schema' };
+        const promise = userFactory(opts).query()
+            .insert({ password: 'hi', hash: '123456' });
+
+        await expect(promise).rejects
+            .toBeInstanceOf(ValidationError);
+    });
+    test(id(6), async () => {
+        await clearAndInsert();
+
+        opts.precedence = { last: 'schema' };
+        const promise = userFactory(opts).query()
+            .insert({ password: 'hi', hash: '123456' });
+
+        await expect(promise).rejects
+            .toBeInstanceOf(ValidationError);
+    });
+    test(id(7) + `No precedence`, async () => {
+        await clearAndInsert();
+
+        opts.precedence = {};
+        const promise = userFactory(opts).query()
+            .insert({ password: 'hi', hash: '123456' });
+        await expect(promise).rejects
             .toBeInstanceOf(ValidationError);
     });
 });

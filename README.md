@@ -8,7 +8,7 @@
 [![Issues](https://img.shields.io/github/issues/rafamel/objection-before-and-unique.svg)](https://github.com/rafamel/objection-before-and-unique/issues)
 [![License](https://img.shields.io/github/license/rafamel/objection-before-and-unique.svg)](https://github.com/rafamel/objection-before-and-unique/blob/master/LICENSE)
 
-**Advanced unique validation + Simpler `before` checks + Final instance validation for [Objection.js](http://vincit.github.io/objection.js/)**
+**Advanced unique validation + Simpler `before` checks + Final schema validation for [Objection.js](http://vincit.github.io/objection.js/)**
 
 ## Install
 
@@ -27,8 +27,11 @@ To set up, mixin the model:
 ```javascript
 const Model = require('objection').Model;
 const beforeUnique = require('objection-before-and-unique');
-// Mixin the Model and pass
-// `objection-before-and-unique` options
+// Pass`objection-before-and-unique` options
+// when you mixin the model
+const opts = {
+    ...
+};
 class MyModel extends beforeUnique(opts)(Model) {
     ...
 }
@@ -40,7 +43,7 @@ Where `opts` is an object with the options taken by this plugin - [here's a comp
 
 *Optional.* Sets the unique columns.
 
-Takes an **array of objects**, each with keys:
+**Array of objects**, each with keys:
 
 - `col`: *String.* Column name to check for uniqueness.
 - `label` (optional): *String.* How to name `col` in the response error message - if any.
@@ -62,7 +65,7 @@ If any of the unique checks fails, a [`ValidationError`](http://vincit.github.io
 
 *Optional.* Defines functions to run before inserting/patching/updating a database entry, to do any additional checks/validations or mutate the instance object.
 
-Takes an **array of functions**, each:
+**Array of functions**, each:
 
 - Taking an object with keys:
     - `instance`: The new model instance created by the insert/update/patch. Keep in mind that, if the operation is a patch, the instance data might not be complete.
@@ -110,18 +113,85 @@ opts.before = [
 ];
 ```
 
-### `opts.precedence`
+### `opts.schema`
 
-*Optional,* **string.** Defines the order in which the checks should run. Valid values are:
+*Optional,* [*Joi schema object.*](https://github.com/hapijs/joi/blob/master/API.md#validatevalue-schema-options-callback)
 
-- `'none'`: *Default.* Checks are run in parallel so their completion can happen in no specific order.
-- `'before'`: Checks are run sequentially (next check only begins when the previous has ended) in the order they where passed. `before` checks are run first, then `unique`.
-- `'unique'`: Checks are run sequentially (next check only begins when the previous has ended) in the order they where passed. `unique` checks are run first, then `before`.
+Intended as a partial validation for anything that might have changed via your [`before`](#optsbefore) checks since the instance was created and validated via the default *Objection.js* validator (which always runs before).
 
-**Setting precedence to any other than `'none'` will, however, negatively impact performance** (as checks are not being run in parallel).
+The instance itself will **not be mutated** by this validation, as it's intended as a last step.
+
+Even though, *Joi* is used, if the instance fails to pass the schema, a *Objection.js* [`ValidationError`](http://vincit.github.io/objection.js/#validationerror) will be thrown via [`Model.createValidationError()`], with `keyword` of `schema`.
+
+The following options are [passed to the *Joi* validation](https://github.com/hapijs/joi/blob/master/API.md#validatevalue-schema-options-callback):
 
 ```javascript
-opts.precendence = 'none';
+{
+    abortEarly: true,
+    convert: false,
+    allowUnknown: true,
+    stripUnknown: false,
+    presence: 'optional',
+    noDefaults: true
+}
+```
+
+```javascript
+const joi = require('joi');
+opts.schema = Joi.object().keys({
+    hash: Joi.string().required(),
+    password: Joi.any().forbidden()
+});
+```
+
+### `opts.precedence`
+
+*Optional.* Defines the order in which the checks should run.
+
+**Object** with keys.
+
+- `first`: *String.* Valid values are:
+    - `'before'`
+    - `'unique'`
+    - `'schema'`
+- `last`: *String.* Valid values are:
+    - `'before'`
+    - `'unique'`
+    - `'schema'`
+
+If `first` has a value of `'before'` and `last` of `'unique'`, checks will be run in the following order (next will only begin once the previous has ended):
+
+1. `before`
+1. `schema`
+1. `unique`
+
+However, all tests within each *stage* will be run in parallel.
+
+If `first` is defined, but not `last`, the other two will run in parallel after the first has completed. If, for example:
+
+```javascript
+opts.precedence = { first: 'before' };
+```
+
+`schema` and `unique` checks will run in parallel *after* `before` checks have completed. This is also true for when only `last` is defined. If, for example:
+
+```javascript
+opts.precedence = {
+    last: 'schema'
+};
+```
+
+Both `before` and `unique` checks will run in parallel first and then, `schema` checks would be run once they both have completed.
+
+To run all tests (`before`, `unique`, and `schema`) in parallel pass an empty object (`opts.precedence = {}`).
+
+The default value for `opts.precedence` is:
+
+```javascript
+opts.precedence = {
+    first: 'before',
+    last: 'unique'
+};
 ```
 
 ### `opts.old`
@@ -146,6 +216,10 @@ Therefore, **[`Model.query()`](http://vincit.github.io/objection.js/#query) patc
 
 It would be, for example, fitting to disable the default behavior when there are no [checks for uniqueness](#optsunique) and you don't require any information from the previous values on your [`opts.before`](#optsbefore) functions.
 
+```javascript
+opts.old = true;
+```
+
 ### Complete Setup Example
 
 ```javascript
@@ -153,6 +227,10 @@ const Model = require('objection').Model;
 const beforeUnique = require('objection-before-and-unique');
 
 const opts = {
+    schema: Joi.object().keys({
+        hash: Joi.string().required(),
+        password: Joi.any().forbidden()
+    }),
     unique: [
         { col: 'username', label: 'User' },
         { col: 'email', label: 'Email', insensitive: true },
@@ -201,7 +279,7 @@ class MyModel extends beforeUnique(opts)(Model) {
 
 ## Usage
 
-Once [you've set it up](#setup), you can use your model as you would with any other [Objection.js](http://vincit.github.io/objection.js/) model, with the difference that [you won't be able to do any update/patch via `Model.query()`](#opts.old).
+Once [you've set it up](#setup), you can use your model as you would with any other [Objection.js](http://vincit.github.io/objection.js/) model, with the difference that [you won't be able to do any update/patch via `Model.query()`](#optsold).
 
 ### Instance update/patch queries
 
