@@ -18,7 +18,7 @@
 
 - By default, all [`Model.query()`](http://vincit.github.io/objection.js/#query) update and patch operations are disabled. You must use [`instance.$query()`](http://vincit.github.io/objection.js/#_s_query) for any update or patch operation. [You can check here how to do it instead,](#instance-updatepatch-queries) or [check `opts.old` for more information.](#optsold)
 - This plugin uses [`$beforeUpdate`](http://vincit.github.io/objection.js/#_s_beforeupdate) and [`$beforeInsert`](http://vincit.github.io/objection.js/#_s_beforeinsert) to run all checks. If you want to use them in your model instead of [opts.before](#optsbefore), you should always call `super.$beforeInsert` or `super.$beforeUpdate` first. [Here's how](#using-beforeinsert-and-beforeupdate-in-your-model).
-- Only the first error thrown by the [unique](#optsunique) and [before](#optsbefore) checks will be thrown. [Here's more information on the errors thrown by the unique checks.](#optsunique)
+- Only the first error thrown by the [unique](#optsunique), [before](#optsbefore), or [schema](#optsschema) checks will be thrown. [Here's more information on the errors thrown by the unique checks.](#optsunique)
 
 ## Setup
 
