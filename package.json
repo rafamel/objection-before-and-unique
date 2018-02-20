@@ -6,15 +6,18 @@
   "homepage": "https://github.com/rafamel/objection-before-and-unique",
   "main": "./lib/index",
   "scripts": {
+    "prepublishOnly": "MSG='Publishing in:' npm run validate",
+    "precommit": "MSG='Committing in:' npm run validate",
+    "pretest": "knex migrate:latest --knexfile=\"test/db/knexfile.js\"",
+    "test": "run-s lint:test && jest ./test/.*.test.js --runInBand --verbose",
+    "test:watch": "nodemon -w ./test -x \"clear && npm run test\"",
+    "fix": "prettier --ignore-path .gitignore --write \"*/**/*.json\" \"**/*.{js,md}\"",
     "lint": "eslint ./lib --ext .js",
     "lint:test": "eslint ./test --ext .js",
     "lint:md": "markdownlint *.md --config markdown.json",
-    "beforeJest": "knex migrate:latest --knexfile=\"test/db/knexfile.js\"",
-    "test": "run-s lint:test beforeJest && jest ./test/.*.test.js --runInBand --verbose",
-    "watch": "nodemon ./node_modules/.bin/run-s lint test",
-    "checks": "run-s lint lint:* beforeJest && jest ./test/.*.test.js --runInBand && npm outdated",
-    "prepublishOnly": "npm run checks",
-    "update:packages": "rm -rf node_modules && rm package-lock.json && npm update --save/save-dev && npm install && npm outdated"
+    "validate": "run-s lint lint:md test && npm run outdated",
+    "update": "npm update --save/save-dev && npm outdated",
+    "outdated": "if !(npm outdated) && [ -n \"$MSG\" ]; then printf \"\n\" && for ((i=10; i>=0; --i)); do sleep 1 && printf '\r%s %2d' \"$MSG\" \"$i\"; done; fi;"
   },
   "contributors": [
     {
@@ -43,25 +46,30 @@
     }
   ],
   "devDependencies": {
+    "babel-eslint": "^8.2.1",
     "coveralls": "^3.0.0",
-    "eslint": "^4.12.1",
-    "eslint-config-standard": "^10.2.1",
+    "eslint": "^4.18.0",
+    "eslint-config-prettier": "^2.9.0",
+    "eslint-config-standard": "^11.0.0",
     "eslint-plugin-import": "^2.8.0",
-    "eslint-plugin-jest": "^21.3.2",
-    "eslint-plugin-node": "^5.2.1",
+    "eslint-plugin-jest": "^21.12.2",
+    "eslint-plugin-node": "^6.0.0",
+    "eslint-plugin-prettier": "^2.6.0",
     "eslint-plugin-promise": "^3.6.0",
     "eslint-plugin-standard": "^3.0.1",
-    "jest-cli": "^21.2.1",
-    "knex": "^0.14.2",
-    "markdownlint-cli": "^0.5.0",
-    "nodemon": "^1.12.1",
+    "husky": "^0.14.3",
+    "jest-cli": "^22.3.0",
+    "knex": "0.14.2",
+    "markdownlint-cli": "^0.7.1",
+    "nodemon": "^1.15.1",
     "npm-run-all": "^4.1.1",
-    "objection": "^0.9.2",
+    "objection": "^0.9.4",
+    "prettier": "^1.10.2",
     "sleep-promise": "^2.0.0",
     "sqlite3": "^3.1.13"
   },
   "dependencies": {
-    "joi": "^13.0.2"
+    "joi": "^13.1.2"
   },
   "engines": {
     "node": ">=8.0.0"
