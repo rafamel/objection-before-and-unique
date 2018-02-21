@@ -1,6 +1,6 @@
 {
   "name": "objection-before-and-unique",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "author": "Rafa Mel",
   "description": "Advanced unique validation + Simpler before checks + Final schema validation for Objection.js",
   "homepage": "https://github.com/rafamel/objection-before-and-unique",
