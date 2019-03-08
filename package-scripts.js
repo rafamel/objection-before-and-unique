@@ -66,7 +66,9 @@ module.exports = scripts({
   test: {
     default: series(
       'nps lint types',
-      'cross-env NODE_ENV=test jest --runInBand'
+      'knex --knexfile ./test/db/knexfile.js migrate:latest',
+      'cross-env NODE_ENV=test jest --runInBand',
+      'shx rm ./test/db/test_db.db'
     ),
     watch:
       `onchange "./{src,test}/**/*.{${EXT}}" --initial --kill -- ` +
