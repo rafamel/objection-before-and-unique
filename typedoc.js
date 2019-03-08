@@ -13,5 +13,11 @@ module.exports = {
   excludePrivate: true,
   excludeNotExported: false,
   readme: path.join(__dirname, 'README.md'),
-  exclude: ['**/internal/**/*.ts']
+  exclude: [
+    '**/internal/**/*.ts',
+    '**/run.ts',
+    '**/unique.ts',
+    '**/before.ts',
+    '**/schema.ts'
+  ]
 };
