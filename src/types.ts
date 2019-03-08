@@ -67,7 +67,9 @@ export type TUniqueQuery = (options: {
    * Old instance, if the operation is an update/patch and it's available
    */
   old?: Objection.Model;
-}) => Objection.QueryBuilder<any, any, any>;
+}) =>
+  | Objection.QueryBuilder<any, any, any>
+  | Promise<void | Objection.Model | Objection.Model[]>;
 
 /**
  * Each of the `before` hooks to be run. See [`IOptions`](./interfaces/ioptions.html).
