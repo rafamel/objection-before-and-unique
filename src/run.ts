@@ -1,7 +1,8 @@
 import * as Objection from 'objection';
 import { IOptions, TOperation, IOrder } from './types';
-import unique from './unique';
 import before from './before';
+import schema from './schema';
+import unique from './unique';
 
 export default async function run(
   self: Objection.Model,
@@ -14,9 +15,9 @@ export default async function run(
   if (!(options.unique || options.before || options.schema)) return;
 
   const fns = {
-    unique: unique(self, Model, options, operation, old),
     before: before(self, queryContext, options, operation, old),
-    schema: []
+    schema: schema(self, options),
+    unique: unique(self, Model, options, operation, old)
   };
 
   // Run in order determined by options.order
