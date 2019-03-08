@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 
 import * as Objection from 'objection';
+import run from './run';
 import { IOptions, TMixin } from './types';
-
-function run(...opts: any[]) {}
 
 /**
  * Default export on module entry point.
