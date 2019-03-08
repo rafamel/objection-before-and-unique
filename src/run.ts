@@ -1,6 +1,7 @@
 import * as Objection from 'objection';
 import { IOptions, TOperation, IOrder } from './types';
 import unique from './unique';
+import before from './before';
 
 export default async function run(
   self: Objection.Model,
@@ -14,7 +15,7 @@ export default async function run(
 
   const fns = {
     unique: unique(self, Model, options, operation, old),
-    before: [],
+    before: before(self, queryContext, options, operation, old),
     schema: []
   };
 
