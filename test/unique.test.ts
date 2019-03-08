@@ -3,7 +3,10 @@ import { clear, clearAndInsert } from './utils/db-clear';
 import factory from './utils/user-factory';
 import { ValidationError } from 'objection';
 
-afterAll(() => db.destroy());
+afterAll(async () => {
+  await clear();
+  await db.destroy();
+});
 
 describe(`IUnique`, () => {
   test(`suceeds with no previous data`, async () => {

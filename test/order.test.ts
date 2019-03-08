@@ -3,7 +3,10 @@ import { clear } from './utils/db-clear';
 import factory from './utils/user-factory';
 import { ValidationError } from 'objection';
 
-afterAll(() => db.destroy());
+afterAll(async () => {
+  await clear();
+  await db.destroy();
+});
 
 test(`default order`, async () => {
   await clear();

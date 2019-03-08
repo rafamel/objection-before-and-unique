@@ -2,7 +2,10 @@ import db from './utils/db-connection';
 import { clear } from './utils/db-clear';
 import factory from './utils/user-factory';
 
-afterAll(() => db.destroy());
+afterAll(async () => {
+  await clear();
+  await db.destroy();
+});
 
 const User = factory({
   schema: {

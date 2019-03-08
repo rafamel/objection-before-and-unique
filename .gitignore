@@ -44,7 +44,6 @@ npm-debug.log
 *.log
 *.sql
 *.sqlite
-*.db
 
 # OS generated files #
 ######################
