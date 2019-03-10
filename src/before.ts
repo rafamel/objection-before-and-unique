@@ -1,12 +1,12 @@
 import * as Objection from 'objection';
-import { IOptions, TOperation, TBefore } from '~/types';
+import { IOptions, TOperation, TBefore, TModel } from '~/types';
 
 export default function before(
-  self: Objection.Model,
+  self: TModel,
   queryContext: Objection.QueryContext,
   options: IOptions,
   operation: TOperation,
-  old?: Objection.Model
+  old?: TModel
 ): Array<() => void | Promise<void>> {
   let fns: TBefore[] = options.before as any;
   const isArray = Array.isArray(fns);
@@ -15,8 +15,8 @@ export default function before(
   if (!isArray) fns = [fns as any];
 
   const obj = {
-    operation,
     instance: self,
+    operation,
     context: queryContext,
     old
   };

@@ -4,7 +4,7 @@ import { JSONSchema7 } from 'json-schema';
 /**
  * See [`obau()`](#obau).
  */
-export type TMixin = <T>(model: T & typeof Objection.Model) => T;
+export type TMixin = <T>(Model: T & typeof Objection.Model) => T;
 
 /**
  * `obau()` options.
@@ -34,6 +34,8 @@ export interface IOptions {
   old?: boolean;
 }
 
+export type TModel = Objection.Model & { [key: string]: any };
+
 /**
  * An object definition of uniqueness.
  */
@@ -54,7 +56,7 @@ export type TUniqueQuery = (options: {
   /**
    * New model instance being tested for uniqueness
    */
-  instance: Objection.Model;
+  instance: TModel;
   /**
    * Objection Model
    */
@@ -66,7 +68,7 @@ export type TUniqueQuery = (options: {
   /**
    * Old instance, if the operation is an update/patch and it's available
    */
-  old?: Objection.Model;
+  old?: TModel;
 }) =>
   | Objection.QueryBuilder<any, any, any>
   | Promise<void | Objection.Model | Objection.Model[]>;
@@ -78,13 +80,13 @@ export type TUniqueQuery = (options: {
  */
 export type TBefore = (opts: {
   /**
+   * The new model instance created on insert/update/patch. Keep in mind that, if the operation is a patch, the instance data might not be complete.
+   */
+  instance: TModel;
+  /**
    * The type of operation the hook was executed for.
    */
   operation: TOperation;
-  /**
-   * The new model instance created on insert/update/patch. Keep in mind that, if the operation is a patch, the instance data might not be complete.
-   */
-  instance: Objection.Model;
   /**
    * The [_query context_](http://vincit.github.io/objection.js/#context) object.
    */
@@ -92,7 +94,7 @@ export type TBefore = (opts: {
   /**
    * The old model instance (with the values prior to the update/patch operation). It is `undefined` when the operation is an insert (as there is no previous instance), and [inexistent/not passed when `IOptions.old` is set to `false`](./interfaces/ioptions.html#old).
    */
-  old?: Objection.Model;
+  old?: TModel;
 }) => Promise<void> | void;
 
 export type TOperation = 'insert' | 'update' | 'patch';

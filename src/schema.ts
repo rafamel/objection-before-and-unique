@@ -1,12 +1,12 @@
 import * as Objection from 'objection';
 import Ajv from 'ajv';
-import { IOptions } from './types';
+import { IOptions, TModel } from './types';
 import { JSONSchema7 } from 'json-schema';
 
 const ajv = new Ajv();
 
 export default function schema(
-  self: Objection.Model,
+  self: TModel,
   options: IOptions
 ): Array<() => void> {
   if (!options.schema) return [];

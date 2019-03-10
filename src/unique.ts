@@ -1,12 +1,12 @@
 import * as Objection from 'objection';
-import { IOptions, TOperation, IUnique, TUniqueQuery } from './types';
+import { IOptions, TOperation, IUnique, TUniqueQuery, TModel } from './types';
 
 export default function unique(
-  self: Objection.Model,
+  self: TModel,
   Model: typeof Objection.Model,
   options: IOptions,
   operation: TOperation,
-  old?: Objection.Model
+  old?: TModel
 ): Array<() => Promise<void>> {
   let uniques: Array<IUnique | TUniqueQuery> = options.unique as any;
   const isArray = Array.isArray(uniques);
@@ -15,6 +15,7 @@ export default function unique(
   if (!isArray) uniques = [uniques as any];
 
   const obj = { instance: self, Model, operation, old };
+
   return uniques.map((constraint) => {
     const isCustom = typeof constraint === 'function';
     const fn = isCustom
@@ -41,12 +42,12 @@ export default function unique(
 }
 
 function defUnique(
-  self: Objection.Model,
+  self: TModel,
   Model: typeof Objection.Model,
   options: IOptions,
   operation: TOperation,
   constraint: IUnique,
-  old?: Objection.Model
+  old?: TModel
 ): null | (() => Objection.QueryBuilderYieldingOneOrNone<Objection.Model>) {
   let ids: string[] = (self.constructor as any).idColumn;
   if (!Array.isArray(ids)) ids = [ids];
@@ -61,7 +62,7 @@ function defUnique(
 
   let all = true;
   const values = keys.reduce((acc: any, key) => {
-    const val = (self as any)[key] || (isPatch && old && (old as any)[key]);
+    const val = self[key] || (isPatch && old && old[key]);
     if (!val) all = false;
 
     acc[key] = val;
@@ -79,7 +80,7 @@ function defUnique(
         // from the uniqueness check
         if (options.old && old) {
           ids.forEach((id) => {
-            query.whereNot(id, (old as any)[id]);
+            query.whereNot(id, old[id]);
           });
         }
         return query;

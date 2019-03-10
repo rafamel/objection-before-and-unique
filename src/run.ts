@@ -1,16 +1,15 @@
 import * as Objection from 'objection';
-import { IOptions, TOperation, IOrder } from './types';
+import { IOptions, TOperation, IOrder, TModel } from './types';
 import before from './before';
 import schema from './schema';
 import unique from './unique';
 
 export default async function run(
-  self: Objection.Model,
-  Model: typeof Objection.Model,
+  self: TModel,
   queryContext: Objection.QueryContext,
   options: IOptions,
   operation: TOperation,
-  old?: Objection.Model
+  old?: TModel
 ): Promise<void> {
   if (!(options.unique || options.before || options.schema)) return;
 

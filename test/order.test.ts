@@ -16,7 +16,7 @@ test(`default order`, async () => {
     before: [
       async ({ instance }) => {
         before = true;
-        if ((instance as any).email === 'bar@bar.bar') throw Error();
+        if (instance.email === 'bar@bar.bar') throw Error();
       }
     ],
     schema: {
@@ -67,7 +67,7 @@ test(`altered order`, async () => {
     before: [
       async ({ instance }) => {
         before = true;
-        if ((instance as any).email === 'bar@bar.bar') throw Error();
+        if (instance.email === 'bar@bar.bar') throw Error();
       }
     ],
     schema: {
