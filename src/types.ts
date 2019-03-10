@@ -114,13 +114,13 @@ export type TOperation = 'insert' | 'update' | 'patch';
  * 2. `schema`
  * 3. `unique`
  *
- * However, all tests within each _stage_ will be run in parallel.
+ * However, all tests within each stage will be run in parallel.
  *
- * If only `IOrder.first` is defined, but not `IOrder.last`, the other two tasks will run in parallel after the first has completed. As an example, if `IOrder.first === "before"` and `IOrder.last == null`, then `schema` and `unique` checks will run in parallel *after* `before` checks have completed.
+ * If only `IOrder.first` is defined, but not `IOrder.last`, the other two stages will run in parallel after the first has completed. As an example, if `IOrder.first === "before"` and `IOrder.last` is `undefined`, then `schema` and `unique` checks will run in parallel *after* `before` checks have completed.
  *
- * The same also applies in reverse, when only `IOrder.last` is defined. As an example, if `IOrder.last === "schema"` and `IOrder.first == null`, both `before` and `unique` tasks would run in parallel first while `schema` tasks would only be run after they have completed.
+ * The same also applies in reverse, when only `IOrder.last` is defined. As an example, if `IOrder.last === "schema"` and `IOrder.first` is `undefined`, both `before` and `unique` tasks would run in parallel first while `schema` tasks would only be run after they have completed.
  *
- * If `IOrder.first == null` and `IOrder.last == null`, all tests will be run in parallel.
+ * If both `IOrder.first` and `IOrder.last` are `undefined` all tests will be run in parallel.
  */
 export interface IOrder {
   first?: TOrder;
