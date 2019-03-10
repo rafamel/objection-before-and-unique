@@ -100,55 +100,56 @@ describe(`complex IUnique`, () => {
   });
 });
 
-describe(`TUniqueQuery`, () => {
-  test(`succeeds & receives params`, async () => {
-    await clearAndInsert();
+describe(`TUniqueFn`, () => {
+  describe(`returns query`, () => {
+    test(`succeeds & receives params`, async () => {
+      await clearAndInsert();
 
-    let options: any;
-    const User = factory({
-      unique: [
-        (opts) => {
-          options = opts;
-          return opts.Model.query().where('username', 'none');
+      let options: any;
+      const User = factory({
+        unique: [
+          (opts) => {
+            options = opts;
+            return opts.Model.query().where('username', 'none');
+          }
+        ]
+      });
+
+      const insertA = User.query().insert({
+        username: 'foo',
+        email: 'foo@foo.foo'
+      });
+
+      await expect(insertA).resolves.not.toBeInstanceOf(Error);
+      expect(options).not.toBe(undefined);
+      expect(options.instance).toBeInstanceOf(User);
+      expect(options.Model).toBe(User);
+      expect(options.operation).toBe('insert');
+      expect(options.old).toBe(undefined);
+    });
+    test(`fails`, async () => {
+      await clearAndInsert();
+      const User = factory({
+        unique: (options) => {
+          return options.Model.query().where(
+            'username',
+            options.instance.username
+          );
         }
-      ]
-    });
+      });
 
-    const insertA = User.query().insert({
-      username: 'foo',
-      email: 'foo@foo.foo'
-    });
+      const insertA = User.query().insert({
+        username: 'foo',
+        email: 'foo@foo.foo'
+      });
+      const catcherA = insertA.catch((err) => err.data);
 
-    await expect(insertA).resolves.not.toBeInstanceOf(Error);
-    expect(options).not.toBe(undefined);
-    expect(options.instance).toBeInstanceOf(User);
-    expect(options.Model).toBe(User);
-    expect(options.operation).toBe('insert');
-    expect(options.old).toBe(undefined);
+      await expect(insertA).rejects.toBeInstanceOf(ValidationError);
+      await expect(catcherA).resolves.toHaveProperty('key', []);
+      await expect(catcherA).resolves.toHaveProperty('keyword', 'unique');
+    });
   });
-  test(`fails`, async () => {
-    await clearAndInsert();
-    const User = factory({
-      unique: (options) => {
-        return options.Model.query().where(
-          'username',
-          (options.instance as any).username
-        );
-      }
-    });
-
-    const insertA = User.query().insert({
-      username: 'foo',
-      email: 'foo@foo.foo'
-    });
-    const catcherA = insertA.catch((err) => err.data);
-
-    await expect(insertA).rejects.toBeInstanceOf(ValidationError);
-    await expect(catcherA).resolves.toHaveProperty('key', []);
-    await expect(catcherA).resolves.toHaveProperty('keyword', 'unique');
-  });
-});
-
+  
 describe(`patch`, () => {
   describe(`old = true`, () => {
     test(`patch and update are disabled`, async () => {
@@ -163,7 +164,7 @@ describe(`patch`, () => {
       await expect(queryA).rejects.toBeInstanceOf(Error);
       await expect(queryB).rejects.toBeInstanceOf(Error);
     });
-    test(`TUniqueQuery succeeds & receives params`, async () => {
+    test(`TUniqueFn succeeds & receives params`, async () => {
       await clearAndInsert();
 
       let options: any;
@@ -230,7 +231,7 @@ describe(`patch`, () => {
       await expect(queryA).resolves.not.toBeInstanceOf(Error);
       await expect(queryB).resolves.not.toBeInstanceOf(Error);
     });
-    test(`TUniqueQuery succeeds & receives params`, async () => {
+    test(`TUniqueFn succeeds & receives params`, async () => {
       await clearAndInsert();
 
       let options: any;

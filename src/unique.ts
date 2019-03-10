@@ -1,5 +1,5 @@
 import * as Objection from 'objection';
-import { IOptions, TOperation, IUnique, TUniqueQuery, TModel } from './types';
+import { IOptions, TOperation, IUnique, TUniqueFn, TModel } from './types';
 
 export default function unique(
   self: TModel,
@@ -8,7 +8,7 @@ export default function unique(
   operation: TOperation,
   old?: TModel
 ): Array<() => Promise<void>> {
-  let uniques: Array<IUnique | TUniqueQuery> = options.unique as any;
+  let uniques: Array<IUnique | TUniqueFn> = options.unique as any;
   const isArray = Array.isArray(uniques);
 
   if (!uniques || (isArray && !uniques.length)) return [];
@@ -19,7 +19,7 @@ export default function unique(
   return uniques.map((constraint) => {
     const isCustom = typeof constraint === 'function';
     const fn = isCustom
-      ? () => (constraint as TUniqueQuery)(obj)
+      ? () => (constraint as TUniqueFn)(obj)
       : defUnique(self, Model, options, operation, constraint as IUnique, old);
 
     return async () => {

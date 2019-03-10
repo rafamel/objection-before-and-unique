@@ -1,4 +1,3 @@
-
 import * as Objection from 'objection';
 import { JSONSchema7 } from 'json-schema';
 
@@ -14,7 +13,7 @@ export interface IOptions {
   /**
    * Allows unique checks before inserts, patches, and updates. Unique tests can be determined either by a `IUnique` object specifying the columns to be considered, or by a query returning function.
    */
-  unique?: IUnique | TUniqueQuery | Array<IUnique | TUniqueQuery>;
+  unique?: IUnique | TUniqueFn | Array<IUnique | TUniqueFn>;
   /**
    * Defines hooks to be run before inserts, patches, and updates to a database entry. Can perform additional checks or validations, as well as mutate the objects.
    */
@@ -48,12 +47,12 @@ export interface IUnique {
 }
 
 /**
- * A query returning function definition of uniqueness.
+ * A function definition of uniqueness.
  *
- * If the returned query resolves with any instance, the
- * uniqueness check will fail (a new instance will be considered not unique).
+ * * If funtion returns a query, if will be considered unique if there are no resolved instances.
+ * * If the function resolves with a boolean, it will be considered unique when `false`, and fail when `true`.
  */
-export type TUniqueQuery = (options: {
+export type TUniqueFn = (options: {
   /**
    * New model instance being tested for uniqueness
    */
