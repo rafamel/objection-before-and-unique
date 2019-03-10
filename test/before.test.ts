@@ -21,14 +21,16 @@ test(`receives options for old = true`, async () => {
   const user = await User.query().insert({ username: 'foo' });
 
   expect(options).not.toBe(undefined);
-  expect(options.operation).toBe('insert');
   expect(options.instance).toBeInstanceOf(User);
+  expect(options.Model).toBe(User);
+  expect(options.operation).toBe('insert');
   expect(options.context).toHaveProperty('transaction');
   expect(options.old).toBe(undefined);
 
   await user.$query().update({ username: 'baz' });
-  expect(options.operation).toBe('update');
   expect(options.instance).toBeInstanceOf(User);
+  expect(options.Model).toBe(User);
+  expect(options.operation).toBe('update');
   expect(options.context).toHaveProperty('transaction');
   expect(options.old).toBeInstanceOf(User);
 });
@@ -50,8 +52,9 @@ test(`receives options for old = false`, async () => {
     .where('username', 'foo');
   await user.$query().patch({ email: 'some' });
 
-  expect(options.operation).toBe('patch');
   expect(options.instance).toBeInstanceOf(User);
+  expect(options.Model).toBe(User);
+  expect(options.operation).toBe('patch');
   expect(options.context).toHaveProperty('transaction');
   expect(options.old).toBe(undefined);
 });

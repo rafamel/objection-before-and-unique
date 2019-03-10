@@ -1,3 +1,4 @@
+
 import * as Objection from 'objection';
 import { JSONSchema7 } from 'json-schema';
 
@@ -83,6 +84,10 @@ export type TBefore = (opts: {
    * The new model instance created on insert/update/patch. Keep in mind that, if the operation is a patch, the instance data might not be complete.
    */
   instance: TModel;
+  /**
+   * Objection Model
+   */
+  Model: typeof Objection.Model;
   /**
    * The type of operation the hook was executed for.
    */

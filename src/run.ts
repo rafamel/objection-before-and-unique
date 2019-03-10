@@ -6,6 +6,7 @@ import unique from './unique';
 
 export default async function run(
   self: TModel,
+  Model: typeof Objection.Model,
   queryContext: Objection.QueryContext,
   options: IOptions,
   operation: TOperation,
@@ -14,7 +15,7 @@ export default async function run(
   if (!(options.unique || options.before || options.schema)) return;
 
   const fns = {
-    before: before(self, queryContext, options, operation, old),
+    before: before(self, Model, queryContext, options, operation, old),
     schema: schema(self, options),
     unique: unique(self, Model, options, operation, old)
   };

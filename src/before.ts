@@ -3,6 +3,7 @@ import { IOptions, TOperation, TBefore, TModel } from '~/types';
 
 export default function before(
   self: TModel,
+  Model: typeof Objection.Model,
   queryContext: Objection.QueryContext,
   options: IOptions,
   operation: TOperation,
@@ -16,6 +17,7 @@ export default function before(
 
   const obj = {
     instance: self,
+    Model,
     operation,
     context: queryContext,
     old
