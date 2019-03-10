@@ -13,5 +13,5 @@ module.exports = {
   // Build project on version bump. Boolean.
   RELEASE_BUILD: true,
   // Generate docs from TS on version bump. Boolean.
-  RELEASE_DOCS: false
+  RELEASE_DOCS: true
 };
