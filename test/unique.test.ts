@@ -149,7 +149,52 @@ describe(`TUniqueFn`, () => {
       await expect(catcherA).resolves.toHaveProperty('keyword', 'unique');
     });
   });
-  
+  describe(`returns boolean`, () => {
+    test(`succeeds`, async () => {
+      await clear();
+      const UserA = factory({
+        unique: () => false
+      });
+      const UserB = factory({
+        unique: async () => false
+      });
+
+      const insertA = UserA.query().insert({
+        username: 'foo',
+        email: 'foo@foo.foo'
+      });
+      const insertB = UserB.query().insert({
+        username: 'foo',
+        email: 'foo@foo.foo'
+      });
+
+      await expect(insertA).resolves.not.toBeInstanceOf(Error);
+      await expect(insertB).resolves.not.toBeInstanceOf(Error);
+    });
+    test(`fails`, async () => {
+      await clear();
+      const UserA = factory({
+        unique: () => true
+      });
+      const UserB = factory({
+        unique: async () => true
+      });
+
+      const insertA = UserA.query().insert({
+        username: 'foo',
+        email: 'foo@foo.foo'
+      });
+      const insertB = UserB.query().insert({
+        username: 'foo',
+        email: 'foo@foo.foo'
+      });
+
+      await expect(insertA).rejects.toBeInstanceOf(ValidationError);
+      await expect(insertB).rejects.toBeInstanceOf(ValidationError);
+    });
+  });
+});
+
 describe(`patch`, () => {
   describe(`old = true`, () => {
     test(`patch and update are disabled`, async () => {

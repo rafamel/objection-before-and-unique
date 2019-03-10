@@ -70,7 +70,9 @@ export type TUniqueFn = (options: {
    */
   old?: TModel;
 }) =>
+  | boolean
   | Objection.QueryBuilder<any, any, any>
+  | Promise<boolean>
   | Promise<void | Objection.Model | Objection.Model[]>;
 
 /**
