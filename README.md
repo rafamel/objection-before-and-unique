@@ -103,7 +103,7 @@ const opts = {
 };
 
 class MyModel extends obau(opts)(Model) {
-  ...
+  // ...
 }
 ```
 
@@ -158,7 +158,7 @@ MyModel
 
 ### `$beforeInsert` and `$beforeUpdate`
 
-As this plugin uses [`$beforeInsert`](http://vincit.github.io/objection.js/#_s_beforeinsert) and [`$beforeUpdate`](http://vincit.github.io/objection.js/#_s_beforeupdate) under the hood, if you decide to use them instead of or in addition to [`opts.before`](#optsbefore) checks, make sure to always call and resolve the `super` of the function like so:
+As this plugin uses [`$beforeInsert`](http://vincit.github.io/objection.js/#_s_beforeinsert) and [`$beforeUpdate`](http://vincit.github.io/objection.js/#_s_beforeupdate) under the hood, if you decide to use them instead of or in addition to `before` checks, make sure to always call and resolve the `super` of the function like so:
 
 ```javascript
 import { Model } from 'objection';
@@ -167,13 +167,11 @@ import obau from 'objection-before-and-unique';
 class MyModel extends obau(opts)(Model) {
   async $beforeInsert(context) {
     await super.$beforeInsert(context);
-
     // Your $beforeInsert checks
   }
 
   async $beforeUpdate(options, context) {
     await super.$beforeUpdate(options, context);
-
     // Your $beforeUpdate checks
   }
 }
