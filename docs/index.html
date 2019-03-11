@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>objection-before-and-unique 0.4.0</title>
+	<title>objection-before-and-unique 0.5.0</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="assets/css/main.css">
@@ -22,7 +22,7 @@
 						<li class="state loading">Preparing search index...</li>
 						<li class="state failure">The search index is not available</li>
 					</ul>
-					<a href="index.html" class="title">objection-before-and-unique 0.4.0</a>
+					<a href="index.html" class="title">objection-before-and-unique 0.5.0</a>
 				</div>
 				<div class="table-cell" id="tsd-widgets">
 					<div id="tsd-filter">
@@ -54,7 +54,7 @@
 					<a href="globals.html">Globals</a>
 				</li>
 			</ul>
-			<h1> objection-before-and-unique 0.4.0</h1>
+			<h1> objection-before-and-unique 0.5.0</h1>
 		</div>
 	</div>
 </header>
@@ -154,7 +154,7 @@
 };
 
 <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MyModel</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">obau</span>(<span class="hljs-title">opts</span>)(<span class="hljs-title">Model</span>) </span>{
-  ...
+  <span class="hljs-comment">// ...</span>
 }</code></pre>
 				<h2 id="caveats">Caveats</h2>
 				<h3 id="static-update-and-patch">Static <code>update</code> and <code>patch</code></h3>
@@ -192,20 +192,18 @@
     <span class="hljs-function">(<span class="hljs-params">m</span>) =&gt;</span> (!m ? m : m.$query().patchAndFetch({ <span class="hljs-attr">myColToChange</span>: <span class="hljs-string">'myNewValue'</span> }))
   );</code></pre>
 				<h3 id="-beforeinsert-and-beforeupdate"><code>$beforeInsert</code> and <code>$beforeUpdate</code></h3>
-				<p>As this plugin uses <a href="http://vincit.github.io/objection.js/#_s_beforeinsert"><code>$beforeInsert</code></a> and <a href="http://vincit.github.io/objection.js/#_s_beforeupdate"><code>$beforeUpdate</code></a> under the hood, if you decide to use them instead of or in addition to <a href="#optsbefore"><code>opts.before</code></a> checks, make sure to always call and resolve the <code>super</code> of the function like so:</p>
+				<p>As this plugin uses <a href="http://vincit.github.io/objection.js/#_s_beforeinsert"><code>$beforeInsert</code></a> and <a href="http://vincit.github.io/objection.js/#_s_beforeupdate"><code>$beforeUpdate</code></a> under the hood, if you decide to use them instead of or in addition to <code>before</code> checks, make sure to always call and resolve the <code>super</code> of the function like so:</p>
 				<pre><code class="language-javascript"><span class="hljs-keyword">import</span> { Model } <span class="hljs-keyword">from</span> <span class="hljs-string">'objection'</span>;
 <span class="hljs-keyword">import</span> obau <span class="hljs-keyword">from</span> <span class="hljs-string">'objection-before-and-unique'</span>;
 
 <span class="hljs-class"><span class="hljs-keyword">class</span> <span class="hljs-title">MyModel</span> <span class="hljs-keyword">extends</span> <span class="hljs-title">obau</span>(<span class="hljs-title">opts</span>)(<span class="hljs-title">Model</span>) </span>{
   <span class="hljs-keyword">async</span> $beforeInsert(context) {
     <span class="hljs-keyword">await</span> <span class="hljs-keyword">super</span>.$beforeInsert(context);
-
     <span class="hljs-comment">// Your $beforeInsert checks</span>
   }
 
   <span class="hljs-keyword">async</span> $beforeUpdate(options, context) {
     <span class="hljs-keyword">await</span> <span class="hljs-keyword">super</span>.$beforeUpdate(options, context);
-
     <span class="hljs-comment">// Your $beforeUpdate checks</span>
   }
 }</code></pre>
@@ -237,13 +235,16 @@
 						<a href="globals.html#tmixin" class="tsd-kind-icon">TMixin</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
+						<a href="globals.html#tmodel" class="tsd-kind-icon">TModel</a>
+					</li>
+					<li class=" tsd-kind-type-alias">
 						<a href="globals.html#toperation" class="tsd-kind-icon">TOperation</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
 						<a href="globals.html#torder" class="tsd-kind-icon">TOrder</a>
 					</li>
 					<li class=" tsd-kind-type-alias">
-						<a href="globals.html#tuniquequery" class="tsd-kind-icon">TUnique<wbr>Query</a>
+						<a href="globals.html#tuniquefn" class="tsd-kind-icon">TUnique<wbr>Fn</a>
 					</li>
 					<li class=" tsd-kind-function">
 						<a href="globals.html#obau" class="tsd-kind-icon">obau</a>
